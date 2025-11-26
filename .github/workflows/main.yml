@@ -1,4 +1,4 @@
-name: Docker Compose
+name: Deploy Docker Compose app to EC2
 
 on:
   push:
@@ -6,12 +6,15 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
+
     env:
-      PROJECT_REPO: https://github.com/Siddhi1708/quantumsoft-docker-compose.git
       BACKEND_IMAGE: siddhi178/backend:02
       FRONTEND_IMAGE: siddhi178/frontend:02
+      EC2_USER: ubuntu            # or ec2-user depending on your AMI
+      EC2_HOST: ${{ secrets.EC2_HOST }}
+      SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
 
     steps:
       - name: Checkout code
@@ -34,7 +37,19 @@ jobs:
           docker build -t $FRONTEND_IMAGE .
           docker push $FRONTEND_IMAGE
 
-      - name: Deploy with Docker Compose
+      - name: Setup SSH key
         run: |
-          DOCKER_BUILDKIT=1 docker compose down || true
-          BACKEND_IMAGE=$BACKEND_IMAGE FRONTEND_IMAGE=$FRONTEND_IMAGE docker compose up -d --build
+          mkdir -p ~/.ssh
+          echo "${{ env.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ env.EC2_HOST }} >> ~/.ssh/known_hosts
+        shell: bash
+
+      - name: Deploy to EC2 with Docker Compose
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ env.EC2_USER }}@${{ env.EC2_HOST }} bash -c "'
+            docker pull $BACKEND_IMAGE
+            docker pull $FRONTEND_IMAGE
+            BACKEND_IMAGE=$BACKEND_IMAGE FRONTEND_IMAGE=$FRONTEND_IMAGE docker compose -f /path/to/docker-compose.yml down || true
+            BACKEND_IMAGE=$BACKEND_IMAGE FRONTEND_IMAGE=$FRONTEND_IMAGE docker compose -f /path/to/docker-compose.yml up -d --build
+          '"
