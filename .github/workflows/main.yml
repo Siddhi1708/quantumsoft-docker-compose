@@ -1,0 +1,40 @@
+name: Docker Compose
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_REPO: https://github.com/Siddhi1708/quantumsoft-docker-compose.git
+      BACKEND_IMAGE: siddhi178/backend:02
+      FRONTEND_IMAGE: siddhi178/frontend:02
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and push backend image
+      run: |
+        docker build -t $BACKEND_IMAGE .
+        docker push $BACKEND_IMAGE
+
+    - name: Build and push frontend image
+      working-directory: ./qfrontend
+      run: |
+        docker build -t $FRONTEND_IMAGE .
+        docker push $FRONTEND_IMAGE
+
+    - name: Deploy with Docker Compose
+      run: |
+        DOCKER_BUILDKIT=1 docker-compose down || true
+        BACKEND_IMAGE=$BACKEND_IMAGE FRONTEND_IMAGE=$FRONTEND_IMAGE docker-compose up -d --build
