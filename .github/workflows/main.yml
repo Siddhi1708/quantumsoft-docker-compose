@@ -34,10 +34,7 @@ jobs:
           docker build -t $FRONTEND_IMAGE .
           docker push $FRONTEND_IMAGE
 
-      - name: Set up Docker Compose
-        uses: docker/setup-compose-action@v1
-
       - name: Deploy with Docker Compose
         run: |
-          DOCKER_BUILDKIT=1 docker-compose down || true
-          BACKEND_IMAGE=$BACKEND_IMAGE FRONTEND_IMAGE=$FRONTEND_IMAGE docker-compose up -d --build
+          DOCKER_BUILDKIT=1 docker compose down || true
+          BACKEND_IMAGE=$BACKEND_IMAGE FRONTEND_IMAGE=$FRONTEND_IMAGE docker compose up -d --build
