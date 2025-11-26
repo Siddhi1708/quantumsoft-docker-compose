@@ -50,6 +50,6 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ env.EC2_USER }}@${{ env.EC2_HOST }} bash -c "'
             docker pull $BACKEND_IMAGE
             docker pull $FRONTEND_IMAGE
-            BACKEND_IMAGE=$BACKEND_IMAGE FRONTEND_IMAGE=$FRONTEND_IMAGE docker compose -f /home/ubuntu down || true
-            BACKEND_IMAGE=$BACKEND_IMAGE FRONTEND_IMAGE=$FRONTEND_IMAGE docker compose -f /home/ubuntu up -d --build
+            BACKEND_IMAGE=$BACKEND_IMAGE FRONTEND_IMAGE=$FRONTEND_IMAGE docker compose -f /home/ubuntu/docker-compose.yml down || true
+            BACKEND_IMAGE=$BACKEND_IMAGE FRONTEND_IMAGE=$FRONTEND_IMAGE docker compose -f /home/ubuntu/docker-compose.yml up -d --build
           '"
